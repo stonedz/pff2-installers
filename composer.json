@@ -1,0 +1,32 @@
+{
+	"name": "stonedz/pff2-installers",
+	"type": "composer-installer",
+	"description": "Composer installers for pff2",
+	"license": "MIT",
+	"keywords": [
+		"pff2", "module"
+	],
+	"authors": [
+		{
+			"name": "Paolo Fagni",
+			"email": "paolo.fagni@gmail.com",
+			"role": "Developer"
+		}
+	],
+	"homepage": "https://github.com/stonedz/pff2-installers",
+	"support": {
+		"issues": "https://github.com/compwright/codeigniter-installers/issues",
+		"source": "https://github.com/compwright/codeigniter-installers"
+	},
+	"autoload": {
+		"psr-0": {
+			"Composer\\Installer": "src/"
+		}
+	},
+	"extra": {
+		"class": "Composer\\Installer\\Pff2Installer"
+	},
+	"require-dev": {
+		"composer/composer": "*"
+	}
+}
