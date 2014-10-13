@@ -17,7 +17,7 @@ use Composer\Repository\InstalledRepositoryInterface;
 class Pff2Installer extends LibraryInstaller {
 
 	protected $package_install_paths = array(
-		'pff2-module' 	 	=> '{application}/modules/{name}/',
+		'pff2-module' 	 	=> 'modules/{name}/',
 	);
 
 	/**
@@ -94,77 +94,6 @@ class Pff2Installer extends LibraryInstaller {
             case 'pff2-module':
                 $this->moveCoreFiles($downloadPath, '*');
                 break;
-			case 'codeigniter-core':
-				// Move the core library extension out of the package directory and remove it
-			break;
-			
-			case 'codeigniter-library':
-				// Move the library files out of the package directory and remove it
-				$wildcard = "MY_*.php";
-				$path = realpath($downloadPath).'/'.$wildcard;
-				if (count(glob($path)) > 0)
-				{
-					$this->moveCoreFiles($downloadPath, $wildcard);
-				}
-			break;
-			
-			case 'codeigniter-module':
-				// If the module has migrations, copy them into the application migrations directory
-				$moduleMigrations = glob($downloadPath.'migrations/*.php');
-				if (count($moduleMigrations) > 0)
-				{
-					$migrationPath = dirname(dirname($downloadPath)).'/migrations/';
-					// Create the application migration directory if it doesn't exist
-					if ( ! file_exists($migrationPath))
-					{
-						mkdir($migrationPath, 0777, TRUE);
-					}
-					
-					// @HACK to work around the security check in CI config files
-					if ( ! defined('BASEPATH'))
-					{
-						define('BASEPATH', 1);
-					}
-
-					// Determine what type of migration naming style to use
-					// (see https://github.com/EllisLab/CodeIgniter/pull/1949)
-					$configPath = dirname(dirname($downloadPath)).'/config/';
-					@include($configPath.'migration.php');
-					if (isset($config['migration_type']) && $config['migration_type'] === 'timestamp')
-					{
-						$number = (int) date('YmdHis');
-					}
-					else
-					{
-						// Get the latest migration number and increment
-						$migrations = glob($migrationPath.'*.php');
-						if (count($migrations) > 0)
-						{
-							sort($migrations);
-							$migration = array_pop($migrations);
-							$number = ((int) basename($migration)) + 1;
-						}
-						else
-						{
-							$number = 1;
-						}
-					}
-					
-					// Copy each migration into the application migration directory
-					sort($moduleMigrations);
-					foreach ($moduleMigrations as $migration)
-					{
-						// Re-number the migration
-						$newMigration = $migrationPath .
-						                preg_replace('/^(\d+)/', sprintf('%03d', $number), basename($migration));
-						
-						// Copy the migration file
-						copy($migration, $newMigration);
-						
-						$number++;
-					}
-				}
-			break;
 		}
 	}
 	
