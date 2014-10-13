@@ -104,30 +104,17 @@ class Pff2Installer extends LibraryInstaller {
 	 * @var $wildcard = '*.php'
 	 */
 	protected function moveCoreFiles($downloadPath, $wildcard = '*.php'){
-		$dir = realpath($downloadPath);
-		$dst = dirname($dir);
+		$dst = realpath($downloadPath);
+		//$dst = dirname($dir);
 		
 		// Move the files up one level
-		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN')
+		/*if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN')
 		{
 			shell_exec("move /Y $dir/$wildcard $dst/");
 		}
 		else
 		{
 			shell_exec("mv -f $dir/$wildcard $dst/");
-		}
-		
-		// If there are no PHP files left in the package dir, remove the directory
-		/*if (count(glob("$dir/*.php")) === 0)
-		{
-			if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN')
-			{
-				shell_exec("rd /S /Q $dir");
-			}
-			else
-			{
-				shell_exec("rm -Rf $dir");
-			}
 		}*/
 	}
 }
