@@ -70,7 +70,7 @@ class Pff2Installer extends LibraryInstaller {
 	protected function installCode(PackageInterface $package){
 		$downloadPath = $this->getInstallPath($package);
 		$this->downloadManager->download($package, $downloadPath);
-		$this->postInstallActions($package->getType(), $downloadPath);
+		$this->postInstallActions($package->getType(), $downloadPath, $package);
 	}
 
 	/**
@@ -79,7 +79,7 @@ class Pff2Installer extends LibraryInstaller {
 	protected function updateCode(PackageInterface $initial, PackageInterface $target){
 		$downloadPath = $this->getInstallPath($initial);
 		$this->downloadManager->update($initial, $target, $downloadPath);
-		$this->postInstallActions($target->getType(), $downloadPath);
+		$this->postInstallActions($target->getType(), $downloadPath, $target);
 	}
 	
 	/**
@@ -88,15 +88,26 @@ class Pff2Installer extends LibraryInstaller {
 	 * @var string $type
 	 * @var string $downloadPath
 	 */
-	protected function postInstallActions($type, $downloadPath){
+	protected function postInstallActions($type, $downloadPath, PackageInterface $package){
 		switch ($type)
 		{
             case 'pff2-module':
-                $this->moveCoreFiles($downloadPath, '*');
+                $this->moveConfiguration($downloadPath, $package);
                 break;
 		}
 	}
-	
+
+    protected function moveConfiguration($downloadPath, PackageInterface $package) {
+        $dst = realpath($downloadPath);
+        if( file_exists($dst.'/module.conf.yaml') && !file_exists($dst.'/module.conf.local.yaml')) {
+            copy($dst.'/module.conf.yaml', $dst.'/module.conf.local.yaml');
+        }
+        else {
+            echo 'Configuration file for module '. $package->getPrettyName(). 'has NOT be copied to local configuration file, please check for any changes manually';
+        }
+    }
+
+
 	/**
 	 * Move files out of the package directory up one level
 	 *
@@ -105,16 +116,5 @@ class Pff2Installer extends LibraryInstaller {
 	 */
 	protected function moveCoreFiles($downloadPath, $wildcard = '*.php'){
 		$dst = realpath($downloadPath);
-		//$dst = dirname($dir);
-		
-		// Move the files up one level
-		/*if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN')
-		{
-			shell_exec("move /Y $dir/$wildcard $dst/");
-		}
-		else
-		{
-			shell_exec("mv -f $dir/$wildcard $dst/");
-		}*/
 	}
 }
