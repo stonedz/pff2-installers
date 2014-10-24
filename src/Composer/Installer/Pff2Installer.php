@@ -143,11 +143,11 @@ class Pff2Installer extends LibraryInstaller {
 		$dst = realpath($downloadPath);
 	}
 
-    protected function updatePff() {
-        exec('vendor/bin/generateAutoload.sh');
+    protected function updatePff($downloadPath) {
+        shell_exec('vendor/bin/generateAutoload.sh');
     }
 
-    protected function initPff() {
-        exec('vendor/bin/init');
+    protected function initPff($downloadPath) {
+        shell_exec('vendor/stonedz/pff2/scripts/init');
     }
 }
