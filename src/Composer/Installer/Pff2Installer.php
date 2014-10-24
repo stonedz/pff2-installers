@@ -147,7 +147,7 @@ class Pff2Installer extends LibraryInstaller {
         exec('vendor/bin/generateAutoload.sh');
     }
 
-    protectred function initPff() {
+    protected function initPff() {
         exec('vendor/bin/init');
     }
 }
