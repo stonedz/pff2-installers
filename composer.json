@@ -15,8 +15,7 @@
 	],
 	"homepage": "https://github.com/stonedz/pff2-installers",
 	"support": {
-		"issues": "https://github.com/compwright/codeigniter-installers/issues",
-		"source": "https://github.com/compwright/codeigniter-installers"
+		"source": "https://github.com/stonedz/pff2-installers"
 	},
 	"autoload": {
 		"psr-0": {

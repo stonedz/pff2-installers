@@ -18,6 +18,7 @@ class Pff2Installer extends LibraryInstaller {
 
 	protected $package_install_paths = array(
 		'pff2-module' 	 	=> 'modules/{name}/',
+        'pff2-core'         => 'vendor/{vendor}/{name}'
 	);
 
 	/**
@@ -79,7 +80,7 @@ class Pff2Installer extends LibraryInstaller {
 	protected function updateCode(PackageInterface $initial, PackageInterface $target){
 		$downloadPath = $this->getInstallPath($initial);
 		$this->downloadManager->update($initial, $target, $downloadPath);
-		$this->postInstallActions($target->getType(), $downloadPath, $target);
+		$this->postUpdateActions($target->getType(), $downloadPath, $target);
 	}
 	
 	/**
@@ -93,9 +94,33 @@ class Pff2Installer extends LibraryInstaller {
 		{
             case 'pff2-module':
                 $this->moveConfiguration($downloadPath, $package);
+                $this->updatePff();
+                break;
+            case 'pff2-core':
+                $this->initPff();
+                $this->updatePff();
                 break;
 		}
 	}
+
+    /**
+     * Performs actions on the updated files after an installation or update
+     *
+     * @var string $type
+     * @var string $downloadPath
+     */
+    protected function postUpdateActions($type, $downloadPath, PackageInterface $package){
+        switch ($type)
+        {
+            case 'pff2-module':
+                $this->moveConfiguration($downloadPath, $package);
+                $this->updatePff();
+                break;
+            case 'pff2-core':
+                $this->updatePff();
+                break;
+        }
+    }
 
     protected function moveConfiguration($downloadPath, PackageInterface $package) {
         $dst = realpath($downloadPath);
@@ -117,4 +142,12 @@ class Pff2Installer extends LibraryInstaller {
 	protected function moveCoreFiles($downloadPath, $wildcard = '*.php'){
 		$dst = realpath($downloadPath);
 	}
+
+    protected function updatePff() {
+        exec('vendor/bin/generateAutoload.sh');
+    }
+
+    protectred function initPff() {
+        exec('vendor/bin/init');
+    }
 }
