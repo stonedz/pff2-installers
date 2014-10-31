@@ -144,7 +144,7 @@ class Pff2Installer extends LibraryInstaller {
 	}
 
     protected function updatePff() {
-        shell_exec('vendor/stonedz/pff2/scripts/generateAutoload.sh');
+        return true;
     }
 
     protected function initPff() {
