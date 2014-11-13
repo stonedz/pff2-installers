@@ -123,9 +123,20 @@ class Pff2Installer extends LibraryInstaller {
     }
 
     protected function moveConfiguration($downloadPath, PackageInterface $package) {
+        $prettyName = $package->getPrettyName();
+        if (strpos($prettyName, '/') !== false) {
+            list($vendor, $name) = explode('/', $prettyName);
+        } else {
+            $vendor = '';
+            $name = $prettyName;
+        }
         $dst = realpath($downloadPath);
-        if( file_exists($dst.'/module.conf.yaml') && !file_exists($dst.'/module.conf.local.yaml')) {
-            copy($dst.'/module.conf.yaml', $dst.'/module.conf.local.yaml');
+        if( file_exists($dst.'/module.conf.yaml') && !file_exists($dst.'/../../app/config/modules/'.$name.'/module.conf.local.yaml')) {
+            if(!file_exists($dst.'/../../app/config/modules/'.$name)
+            ) {
+                mkdir($dst.'/../../app/config/modules/'.$name);
+            }
+            copy($dst.'/module.conf.yaml', $dst.'/../../app/config/modules/'.$name.'/module.conf.local.yaml');
         }
         else {
             echo 'Configuration file for module '. $package->getPrettyName(). 'has NOT be copied to local configuration file, please check for any changes manually';
