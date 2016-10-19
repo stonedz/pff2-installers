@@ -134,7 +134,7 @@ class Pff2Installer extends LibraryInstaller {
         if( file_exists($dst.'/module.conf.yaml') && !file_exists($dst.'/../../app/config/modules/'.$name.'/module.conf.local.yaml')) {
             if(!file_exists($dst.'/../../app/config/modules/'.$name)
             ) {
-                mkdir($dst.'/../../app/config/modules/'.$name);
+                mkdir($dst.'/../../app/config/modules/'.$name,0755,true);
             }
             copy($dst.'/module.conf.yaml', $dst.'/../../app/config/modules/'.$name.'/module.conf.local.yaml');
         }
