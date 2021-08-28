@@ -1,4 +1,4 @@
 Pff2 Installers for Composer
 ============================
 
-Based on [Codeigniter Installers for Composer](https://github.com/compwright/codeigniter-installers)
+Installers for the pff2 PHP framework
