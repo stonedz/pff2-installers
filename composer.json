@@ -23,7 +23,7 @@
 		}
 	},
 	"extra": {
-		"class": "Composer\\Installer\\Pff2Installer"
+		"class": "Composer\\Installer\\Pff2InstallerPlugin"
 	},
     "require": {
         "composer-plugin-api": "^1.0 || ^2.0"

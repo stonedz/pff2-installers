@@ -1,6 +1,6 @@
 <?php
 
-namespace Composer\Installer;
+namespace pff2\Composer;
 
 use Composer\Package\PackageInterface;
 use Composer\Installer\LibraryInstaller;
