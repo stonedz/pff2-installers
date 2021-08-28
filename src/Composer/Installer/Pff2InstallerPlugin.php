@@ -12,4 +12,12 @@ class Pff2InstallerPlugin implements PluginInterface
         $installer = new Pff2Installer($io, $composer);
         $composer->getInstallationManager()->addInstaller($installer);
     }
+
+    public function uninstall(Composer $composer, IOInterface $io) {
+        return;
+    }
+    
+    public function deactivate(Composer $composer, IOInterface $io) {
+        return;
+    }
 }
