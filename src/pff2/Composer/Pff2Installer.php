@@ -5,6 +5,7 @@ namespace pff2\Composer;
 use Composer\Package\PackageInterface;
 use Composer\Installer\LibraryInstaller;
 use Composer\Repository\InstalledRepositoryInterface;
+use React\Promise\PromiseInterface;
 
 /**
  * Pff2 package installer for Composer
@@ -17,8 +18,7 @@ use Composer\Repository\InstalledRepositoryInterface;
 class Pff2Installer extends LibraryInstaller {
 
 	protected $package_install_paths = array(
-		'pff2-module' 	 	=> 'modules/{name}/',
-        'pff2-core'         => 'vendor/{vendor}/{name}'
+		'pff2-module' 	 	=> 'modules/{name}',
 	);
 
 	/**
@@ -31,13 +31,10 @@ class Pff2Installer extends LibraryInstaller {
 	/**
 	 * {@inheritDoc}
 	 */
-	public function getInstallPath(PackageInterface $package){
+    public function getInstallPath(PackageInterface $package):string 
+    {
+
 		$type = $package->getType();
-		
-		if (!isset($this->package_install_paths[$type]))
-		{
-			throw new \InvalidArgumentException("Package type '$type' is not supported at this time.");
-		}
 
 		$prettyName = $package->getPrettyName();
 		if (strpos($prettyName, '/') !== false) {
@@ -47,41 +44,64 @@ class Pff2Installer extends LibraryInstaller {
 			$name = $prettyName;
 		}
 		
-		$extra = ($this->composer->getPackage())
-		       ? $this->composer->getPackage()->getExtra()
-		       : array();
-		
-		$appdir = (!empty($extra['pff2-application-dir']))
-		        ? $extra['pff2-application-dir']
-		        : 'app';
-
 		$vars = array(
 			'{name}'        => $name,
-			'{vendor}'      => $vendor,
-			'{type}'        => $type,
-			'{application}' => $appdir,
 		);
-		
-		return str_replace(array_keys($vars), array_values($vars), $this->package_install_paths[$type]);
+
+        return  str_replace(array_keys($vars), array_values($vars), $this->package_install_paths[$type]);
 	}
+
 	
 	/**
 	 * {@inheritDoc}
+     *
 	 */
-	protected function installCode(PackageInterface $package){
-		$downloadPath = $this->getInstallPath($package);
-		$this->downloadManager->download($package, $downloadPath);
-		$this->postInstallActions($package->getType(), $downloadPath, $package);
-	}
+    protected function installCode(PackageInterface $package){
+        $downloadPath = $this->getInstallPath($package);
+        $promise = $this->downloadManager->install($package, $downloadPath);
+
+        return $promise->then(function () use ($downloadPath, $package){
+            $this->postUpdateActions($package->getType(), $downloadPath, $package);
+        });    
+    }
+    
 
 	/**
 	 * {@inheritDoc}
 	 */
-	protected function updateCode(PackageInterface $initial, PackageInterface $target){
-		$downloadPath = $this->getInstallPath($initial);
-		$this->downloadManager->update($initial, $target, $downloadPath);
-		$this->postUpdateActions($target->getType(), $downloadPath, $target);
-	}
+    protected function updateCode(PackageInterface $initial, PackageInterface $target){
+        $initialDownloadPath = $this->getInstallPath($initial);
+        $targetDownloadPath = $this->getInstallPath($target);
+        if ($targetDownloadPath !== $initialDownloadPath) {
+            // if the target and initial dirs intersect, we force a remove + install
+            // to avoid the rename wiping the target dir as part of the initial dir cleanup
+            if (strpos($initialDownloadPath, $targetDownloadPath) === 0
+                || strpos($targetDownloadPath, $initialDownloadPath) === 0
+            ) {
+                $promise = $this->removeCode($initial);
+                if (!$promise instanceof PromiseInterface) {
+                    $promise = \React\Promise\resolve();
+                }
+
+                $self = $this;
+
+                return $promise->then(function () use ($self, $target) {
+                    $reflMethod = new \ReflectionMethod($self, 'installCode');
+                    $reflMethod->setAccessible(true);
+
+                    // equivalent of $this->installCode($target) with php 5.3 support
+                    // TODO remove this once 5.3 support is dropped
+                    return $reflMethod->invoke($self, $target);
+                });
+            }
+
+            $this->filesystem->rename($initialDownloadPath, $targetDownloadPath);
+        }
+        $promise = $this->downloadManager->update($initial, $target, $targetDownloadPath);
+        return $promise->then( function () use ($targetDownloadPath, $target){
+            $this->postUpdateActions($target->getType(), $targetDownloadPath, $target);
+        });
+    }
 	
 	/**
 	 * Performs actions on the downloaded files after an installation or update
@@ -89,19 +109,15 @@ class Pff2Installer extends LibraryInstaller {
 	 * @var string $type
 	 * @var string $downloadPath
 	 */
-	protected function postInstallActions($type, $downloadPath, PackageInterface $package){
-		switch ($type)
-		{
+    protected function postInstallActions($type, $downloadPath, PackageInterface $package){
+        switch ($type)
+        {
             case 'pff2-module':
                 $this->moveConfiguration($downloadPath, $package);
                 $this->updatePff();
                 break;
-            case 'pff2-core':
-                $this->initPff();
-                $this->updatePff();
-                break;
-		}
-	}
+        }
+    }
 
     /**
      * Performs actions on the updated files after an installation or update
@@ -116,9 +132,6 @@ class Pff2Installer extends LibraryInstaller {
                 $this->moveConfiguration($downloadPath, $package);
                 $this->updatePff();
                 break;
-            case 'pff2-core':
-                $this->updatePff();
-                break;
         }
     }
 
@@ -131,7 +144,9 @@ class Pff2Installer extends LibraryInstaller {
             $name = $prettyName;
         }
         $dst = realpath($downloadPath);
-        if( file_exists($dst.'/module.conf.yaml') && !file_exists($dst.'/../../app/config/modules/'.$name.'/module.conf.local.yaml')) {
+        if( file_exists($dst.'/module.conf.yaml') 
+            && !file_exists($dst.'/../../app/config/modules/'.$name.'/module.conf.local.yaml')) 
+        {
             if(!file_exists($dst.'/../../app/config/modules/'.$name)
             ) {
                 mkdir($dst.'/../../app/config/modules/'.$name,0755,true);
@@ -139,25 +154,13 @@ class Pff2Installer extends LibraryInstaller {
             copy($dst.'/module.conf.yaml', $dst.'/../../app/config/modules/'.$name.'/module.conf.local.yaml');
         }
         else {
-            echo 'Configuration file for module '. $package->getPrettyName(). 'has NOT be copied to local configuration file, please check for any changes manually';
+            echo 'Configuration file for module '. $package->getPrettyName(). ' has NOT be copied to local configuration file, please check for any changes manually';
         }
     }
-
-
-	/**
-	 * Move files out of the package directory up one level
-	 *
-	 * @var $downloadPath
-	 * @var $wildcard = '*.php'
-	 */
-	protected function moveCoreFiles($downloadPath, $wildcard = '*.php'){
-		$dst = realpath($downloadPath);
-	}
 
     protected function updatePff() {
         return true;
     }
-
     protected function initPff() {
         shell_exec('vendor/stonedz/pff2/scripts/init');
     }
